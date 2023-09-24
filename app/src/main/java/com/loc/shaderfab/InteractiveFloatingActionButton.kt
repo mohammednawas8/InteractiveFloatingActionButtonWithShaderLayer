@@ -11,6 +11,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -20,14 +21,23 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -50,6 +60,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layoutId
@@ -58,6 +69,7 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
@@ -68,6 +80,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.SecureFlagPolicy
 import androidx.constraintlayout.compose.ConstrainedLayoutReference
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.core.view.ViewCompat
 
 data class FloatingActionButtonOption(
     @DrawableRes val icon: Int,
@@ -104,25 +117,25 @@ fun InteractiveFloatingActionButton(
     onMainIconClick: () -> Unit,
     onOptionClick: (FloatingActionButtonOption) -> Unit
 ) {
-    // The Shader layer could be accomplished via a Dialog
     var fabTopLeftOffset by remember {
         mutableStateOf(Offset.Zero)
     }
-
     val conf = LocalConfiguration.current
+    val fullScreenHeight =
+        conf.screenHeightDp.dp + WindowInsets.statusBars.asPaddingValues()
+            .calculateTopPadding()
+
     val density = LocalDensity.current
     val paddingValues = remember(fabTopLeftOffset) {
         with(density) {
             val endPadding = (conf.screenWidthDp.dp - fabTopLeftOffset.x.toDp())
-            val bottomPadding = (conf.screenHeightDp.dp - fabTopLeftOffset.y.toDp())
+            val bottomPadding = (fullScreenHeight - fabTopLeftOffset.y.toDp())
             PaddingValues(end = endPadding, bottom = bottomPadding)
         }
     }
-    AnimatedVisibility(
-        visible = showOptions,
-        enter = slideInVertically(),
-        exit = slideOutVertically()
-    ) {
+
+    if (showOptions) {
+        // The Shader layer could be accomplished via a Dialog
         Dialog(
             onDismissRequest = { dismissFABOptionsRequest?.invoke() },
             properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -135,7 +148,8 @@ fun InteractiveFloatingActionButton(
                     .clickable(
                         interactionSource = MutableInteractionSource(),
                         indication = null,
-                        onClick = { dismissFABOptionsRequest?.invoke() })
+                        onClick = { dismissFABOptionsRequest?.invoke() }
+                    ),
             ) {
                 Row(
                     modifier = Modifier
@@ -214,6 +228,7 @@ fun InteractiveFloatingActionButton(
                         //Main Floating Action Button
                         FloatingActionButton(
                             modifier = Modifier
+                                .statusBarsPadding()
                                 .size(sizes.mainFloatingActionButton)
                                 .rotate(mainIconRotationValue)
                                 .scale(scaleValue),
@@ -237,6 +252,7 @@ fun InteractiveFloatingActionButton(
 
         }
     }
+
     if (!showOptions) {
         FloatingActionButton(
             modifier = modifier
@@ -244,6 +260,7 @@ fun InteractiveFloatingActionButton(
                 .onGloballyPositioned { layoutCoordinates ->
                     val rect = layoutCoordinates.boundsInRoot()
                     fabTopLeftOffset = rect.topLeft
+                    Log.d("test", fabTopLeftOffset.toString())
                 },
             containerColor = mainContainerColor,
             contentColor = mainIconColor,

@@ -2,13 +2,18 @@ package com.loc.shaderfab
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,8 +61,13 @@ fun ScreenWithFAB(paddingValues: PaddingValues) {
     var showOptions: Boolean by rememberSaveable {
         mutableStateOf(false)
     }
+
+    // The problem is when we disable decorFitSystem the Scaffold bottom padding adds the padding
+    // of both the bottom bar and the navigation bar.
+
     Scaffold(
-        modifier = Modifier.padding(paddingValues),
+        contentWindowInsets = WindowInsets(0),
+        modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding()),
         floatingActionButton = {
             InteractiveFloatingActionButton(
                 mainIcon = R.drawable.ic_add,
@@ -85,10 +95,15 @@ fun ScreenWithFAB(paddingValues: PaddingValues) {
                 dismissFABOptionsRequest = {
                     showOptions = false
                 },
-                sizes = FloatingActionButtonSizes(mainFloatingActionButton = 60.dp)
+                sizes = FloatingActionButtonSizes(mainFloatingActionButton = 60.dp),
             )
         }
     ) {
         it.calculateBottomPadding()
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Transparent)){
+            Text(text = "hello")
+        }
     }
 }
